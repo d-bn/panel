@@ -35,11 +35,9 @@ echo ""
 echo -e "\033[1;36mINSTALLING MySQL\033[0m"
 echo ""
 sleep 1
-sudo apt install software-properties-common dirmngr
-sudo apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 0xF1656F24C74CD1D8
-sudo add-apt-repository 'deb [arch=amd64,i386,ppc64el] http://mirrors.dotsrc.org/mariadb/repo/10.3/debian stretch main'
-sudo apt update
-sudo apt install mariadb-server -y
+wget http://repo.mysql.com/mysql-apt-config_0.8.13-1_all.deb > /dev/null 2>&1
+sudo dpkg -i mysql-apt-config_0.8.13-1_all.deb > /dev/null 2>&1
+sudo apt install mysql-server -y
 sudo mysql_secure_installation
 echo ""
 clear
