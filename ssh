@@ -1,0 +1,132 @@
+#!/bin/bash
+ln -fs /usr/share/zoneinfo/Asia/Manila /etc/localtime > /dev/null 2>&1
+dpkg-reconfigure --frontend noninteractive tzdata > /dev/null 2>&1
+ip=$(wget -qO- ipv4.icanhazip.com)
+clear
+rm /root/inst > /dev/null 2>&1
+rm /root/install > /dev/null 2>&1
+echo ""
+sleep 3
+echo ""
+echo -e "\033[1;31mATTENTION \033[1;32mALWAYS USE THE SAME PASSWORD WHEN ASKED"
+echo -e "\033[1;32mALWAYS CONFIRM ISSUES WITH\033[1;37m Y"
+echo ""
+echo -e "\033[1;36mSTARTING INSTALLATION"
+echo ""
+echo -e "\033[1;33mDOWNLOADING UPDATES"
+apt-get update > /dev/null 2>&1
+apt-get upgrade -y -q > /dev/null 2>&1
+echo ""
+echo -e "\033[1;36mINSTALLING APACHE2\033[0m"
+apt-get install apache2 -y > /dev/null 2>&1
+apt-get install cron curl unzip -y > /dev/null 2>&1
+echo ""
+echo -e "\033[1;36mINSTALLING DEPENDENCES\033[0m"
+apt-get -y install php7.0 libapache2-mod-php7.0 -y
+sudo apt-get install mcrypt php7.0-mcrypt -y
+service apache2 restart 
+echo ""
+echo -e "\033[1;36mINSTALLING MySQL\033[0m"
+echo ""
+sleep 1
+wget http://repo.mysql.com/mysql-apt-config_0.8.13-1_all.deb
+sudo dpkg -i mysql-apt-config_0.8.13-1_all.deb
+sudo apt update 
+sudo apt install mysql-server -y
+sudo mysql_secure_installation
+echo ""
+clear
+echo -e "\033[1;31mATTENTION \033[1;32mALWAYS USE THE SAME PASSWORD WHEN ASKED"
+echo -e "\033[1;32mALWAYS CONFIRM ISSUES WITH\033[1;37m Y"
+echo ""
+echo -ne "\033[1;33mPress Enter, To Proceed!\033[1;37m"; read
+clear
+echo -e "\033[1;36mINSTALLING PHPMYADMIN\033[0m"
+echo ""
+echo -e "\033[1;31mATTENTION\033[1;33m!!!"
+echo ""
+echo -e "\033[1;32mSELECT OPTION\033[1;31mAPACHE2 \033[1;32mWITH THE KEY'\033[1;33mSPACE\033[1;32m'"
+echo ""
+echo -e "\033[1;32mSELECT \033[1;31mYES\033[1;32m IN THE OPTION TO FOLLOW(\033[1;36mdbconfig-common\033[1;32m)"
+echo -e "TO CONFIGURE THE DATABASE"
+echo ""
+echo -e "\033[1;32mREMEMBER THE SAME PASSWORD WHEN REQUESTED"
+echo ""
+echo -ne "\033[1;33mPress Enter, To continue!\033[1;37m"; read
+apt-get install phpmyadmin -y
+sudo phpenmod mcrypt
+service apache2 restart
+ln -s /usr/share/phpmyadmin /var/www/html/phpmyadmin
+sudo apt-get install php-ssh2 -y  1> /dev/null 2> /dev/stdout
+apt-get install libssh2-1-dev php-ssh2 -y 1> /dev/null 2> /dev/stdout
+if [ "$(php -m |grep ssh2)" = "ssh2" ]; then
+  true
+else
+  clear
+  echo -e "\033[1;31mCRITICAL ERROR\033[0m"
+  exit
+fi
+sudo apt-get install php-curl > /dev/null 2>&1
+service apache2 restart
+clear
+echo ""
+echo -e "\033[1;31mATTENTION \033[1;33m!!!"
+echo ""
+echo -ne "\033[1;32mEnter mysql password:\033[1;37m: "; read senha
+echo -e "\033[1;32mOK\033[1;37m"
+sleep 1
+mysql -h localhost -u root -p$senha -e "CREATE DATABASE plus"
+clear
+echo -e "\033[1;36mFINISHING INSTALLATION\033[0m"
+echo ""
+echo -e "\033[1;31mFinalizing \033[1;33m..."
+echo ""
+cd /var/www/html/
+echo " "
+wget http://sshbrasil.com.br/Scripts/web/html.zip > /dev/null 2>&1
+sleep 1
+unzip html.zip > /dev/null 2>&1
+rm -rf html.zip index.html
+service apache2 restart
+sleep 1
+if [[ -e "/var/www/html/pages/system/pass.php" ]]; then
+sed -i "s@asdf@$senha@g" /var/www/html/pages/system/pass.php
+fi
+sleep 1
+cd
+wget http://sshbrasil.com.br/Scripts/web/plus.sql > /dev/null 2>&1 
+sleep 1
+if [[ -e "$HOME/plus.sql" ]]; then
+    mysql -h localhost -u root -p$senha --default_character_set utf8 plus < plus.sql
+    rm plus.sql
+else
+    clear
+    echo -e "\033[1;31mERROR WHILE IMPORTING DATABASE\033[0m"
+    sleep 2
+	rm /root/install > /dev/null 2>&1
+    exit
+fi
+echo '* * * * * root /usr/bin/php /var/www/html/pages/system/cron.php' >> /etc/crontab
+echo '* * * * * root /usr/bin/php /var/www/html/pages/system/cron.ssh.php ' >> /etc/crontab
+echo '* * * * * root /usr/bin/php /var/www/html/pages/system/cron.sms.php' >> /etc/crontab
+echo '* * * * * root /usr/bin/php /var/www/html/pages/system/cron.online.ssh.php' >> /etc/crontab
+echo '10 * * * * root /usr/bin/php /var/www/html/pages/system/cron.servidor.php' >> /etc/crontab
+/etc/init.d/cron reload > /dev/null 2>&1
+/etc/init.d/cron restart > /dev/null 2>&1
+chmod 777 /var/www/html/admin/pages/servidor/ovpn
+chmod 777 /var/www/html/admin/pages/download
+chmod 777 /var/www/html/admin/pages/faturas/comprovantes
+service apache2 restart
+sleep 1
+clear
+echo -e "\033[1;32mSuccessfully Installed Panel!"
+echo ""
+echo -e "\033[1;36mYOUR WEB ADMIN PANEL\033[1;37m $ip/admin\033[0m"
+echo -e "\033[1;36mUSER\033[1;37m admin\033[0m"
+echo -e "\033[1;36mPASSWORD\033[1;37m admin\033[0m"
+echo ""
+echo -e "\033[1;33mChange your password after logging in to the panel\033[0m"
+cat /dev/null > ~/.bash_history && history -c
+rm /root/install > /dev/null 2>&1
+rm /root/inst > /dev/null 2>&1
+sleep 1000
