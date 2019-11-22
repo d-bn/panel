@@ -1,0 +1,121 @@
+#!/bin/bash
+
+# Setting timezone and IP
+ln -fs /usr/share/zoneinfo/Asia/Manila /etc/localtime > /dev/null 2>&1
+dpkg-reconfigure --frontend noninteractive tzdata > /dev/null 2>&1
+ip=$(wget -qO- ipv4.icanhazip.com)
+clear
+
+# Removing old installation
+rm /root/inst > /dev/null 2>&1
+rm /root/install > /dev/null 2>&1
+sleep 1
+
+# Update Operating System
+apt-get update > /dev/null 2>&1
+apt-get upgrade -y -q > /dev/null 2>&1
+
+# Removing Apache2
+sudo apt-get remove --auto-remove apache2 > /dev/null 2>&1
+sudo apt-get purge --auto-remove apache2 > /dev/null 2>&1
+
+
+# Installing Apache2
+apt-get install apache2 -y > /dev/null 2>&1
+apt-get install cron curl unzip -y > /dev/null 2>&1
+
+# Installing PHP
+apt-get -y install php7.0 libapache2-mod-php7.0 -y > /dev/null 2>&1
+sudo apt-get install mcrypt php7.0-mcrypt -y > /dev/null 2>&1
+service apache2 restart > /dev/null 2>&1
+sleep 1
+
+# Installing mysql
+wget http://repo.mysql.com/mysql-apt-config_0.8.13-1_all.deb > /dev/null 2>&1
+sudo dpkg -i mysql-apt-config_0.8.13-1_all.deb > /dev/null 2>&1
+sudo apt install mysql-server -y
+sudo mysql_secure_installation
+clear
+
+# Installing phpmyadmin
+apt-get install phpmyadmin -y
+sudo phpenmod mcrypt
+service apache2 restart
+ln -s /usr/share/phpmyadmin /var/www/html/phpmyadmin
+sudo apt-get install php-ssh2 -y  1> /dev/null 2> /dev/stdout
+apt-get install libssh2-1-dev php-ssh2 -y 1> /dev/null 2> /dev/stdout
+if [ "$(php -m |grep ssh2)" = "ssh2" ]; then
+  true
+else
+  clear
+  echo -e "\033[1;31mCRITICAL ERROR\033[0m"
+  exit
+fi
+sudo apt-get install php-curl > /dev/null 2>&1
+service apache2 restart
+clear
+
+# Setting Database
+echo -ne "\033[1;32mPlease enter mysql password:\033[1;37m: "; read senha
+echo -e "\033[1;32mOK\033[1;37m"
+sleep 1
+mysql -h localhost -u root -p$senha -e "CREATE DATABASE plus"
+clear
+
+# Getting panel source
+cd /var/www/html/
+wget http://sshbrasil.com.br/Scripts/web/html.zip > /dev/null 2>&1
+sleep 1
+unzip html.zip > /dev/null 2>&1
+rm -rf html.zip index.html
+service apache2 restart
+sleep 1
+if [[ -e "/var/www/html/pages/system/pass.php" ]]; then
+sed -i "s@asdf@$senha@g" /var/www/html/pages/system/pass.php
+fi
+sleep 1
+
+# Importing Database
+cd
+wget http://sshbrasil.com.br/Scripts/web/plus.sql > /dev/null 2>&1 
+sleep 1
+if [[ -e "$HOME/plus.sql" ]]; then
+    mysql -h localhost -u root -p$senha --default_character_set utf8 plus < plus.sql
+    rm plus.sql
+else
+    clear
+    echo -e "\033[1;31mERROR WHILE IMPORTING DATABASE\033[0m"
+    sleep 2
+	rm /root/install > /dev/null 2>&1
+    exit
+fi
+
+# Adding cron
+echo '* * * * * root /usr/bin/php /var/www/html/pages/system/cron.php' >> /etc/crontab
+echo '* * * * * root /usr/bin/php /var/www/html/pages/system/cron.ssh.php ' >> /etc/crontab
+echo '* * * * * root /usr/bin/php /var/www/html/pages/system/cron.sms.php' >> /etc/crontab
+echo '* * * * * root /usr/bin/php /var/www/html/pages/system/cron.online.ssh.php' >> /etc/crontab
+echo '10 * * * * root /usr/bin/php /var/www/html/pages/system/cron.servidor.php' >> /etc/crontab
+/etc/init.d/cron reload > /dev/null 2>&1
+/etc/init.d/cron restart > /dev/null 2>&1
+
+# Adding permissions
+chmod 777 /var/www/html/admin/pages/servidor/ovpn
+chmod 777 /var/www/html/admin/pages/download
+chmod 777 /var/www/html/admin/pages/faturas/comprovantes
+service apache2 restart
+sleep 1
+
+# Finish Installation
+clear
+echo -e "\033[1;32mSuccessfully Installed Panel!"
+echo ""
+echo -e "\033[1;36mYOUR panel site:\033[1;37m http://$ip/admin\033[0m"
+echo -e "\033[1;36mUsername:\033[1;37m admin\033[0m"
+echo -e "\033[1;36mPassword:\033[1;37m admin\033[0m"
+echo ""
+echo -e "\033[1;33mChange your password after logging in to the panel\033[0m"
+cat /dev/null > ~/.bash_history && history -c
+rm /root/install > /dev/null 2>&1
+rm /root/inst > /dev/null 2>&1
+sleep 1
