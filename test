@@ -46,7 +46,6 @@ sudo systemctl restart apache2
 sudo ln -s /etc/phpmyadmin/apache.conf /etc/apache2/conf-enabled/phpmyadmin.conf
 sudo a2enconf phpmyadmin
 sudo systemctl restart apache2
-exit;
 
 # Install Dependencies
 sudo apt-get install php-ssh2 -y  1> /dev/null 2> /dev/stdout
