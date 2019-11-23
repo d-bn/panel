@@ -9,3 +9,7 @@ apt-get update; apt-get upgrade -y; wget https://raw.githubusercontent.com/d-bn/
 
 
 wget https://www.dropbox.com/s/l475rfwkqn8z3as/resellerpanel.zip
+
+
+
+apt-get update; apt-get upgrade -y; wget https://raw.githubusercontent.com/d-bn/panel/master/v5.sh chmod +x v5.sh clear; ./v5.sh
