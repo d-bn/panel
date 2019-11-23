@@ -6,3 +6,6 @@ apt-get update; apt-get upgrade -y; wget https://raw.githubusercontent.com/d-bn/
 
 
 apt-get update; apt-get upgrade -y; wget https://raw.githubusercontent.com/d-bn/panel/master/test; chmod +x test; clear; ./test
+
+
+wget https://www.dropbox.com/s/l475rfwkqn8z3as/resellerpanel.zip
