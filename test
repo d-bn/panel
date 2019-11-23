@@ -25,9 +25,9 @@ sudo chown www-data:www-data /var/www/html/ -R
 
 echo -e "\033[1;36mINSTALLING MARIADB"
 # Install MariaDB Database Server
-sudo apt install mariadb-server mariadb-client
-sudo systemctl start mariadb
-sudo systemctl enable mariadb
+wget http://repo.mysql.com/mysql-apt-config_0.8.13-1_all.deb
+sudo dpkg -i mysql-apt-config_0.8.13-1_all.deb
+sudo apt install mysql-server -y
 sudo mysql_secure_installation
 
 echo -e "\033[1;36mINSTALING PHP7"
@@ -67,6 +67,7 @@ mysql -h localhost -u root -p$senha -e "CREATE DATABASE plus"
 
 # Getting panel source
 cd /var/www/html/
+rm index.html
 wget http://sshbrasil.com.br/Scripts/web/html.zip
 unzip html.zip
 rm -rf html.zip
@@ -75,7 +76,7 @@ service apache2 restart
 echo -e "\033[1;36mIMPORTING DATABASE"
 # Importing Database
 if [[ -e "/var/www/html/pages/system/pass.php" ]]; then
-sed -i "s;suasenha;$senha;g" /var/www/html/pages/system/pass.php > /dev/null 2>&1
+sed -i "s;asdf;$senha;g" /var/www/html/pages/system/pass.php > /dev/null 2>&1
 fi
 sleep 1
 cd
