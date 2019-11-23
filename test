@@ -1,0 +1,135 @@
+#!/bin/bash
+
+
+echo -e "\033[1;36mSETTING TIME ZONE"
+# Setting timezone
+ln -fs /usr/share/zoneinfo/Asia/Manila /etc/localtime > /dev/null 2>&1
+dpkg-reconfigure --frontend noninteractive tzdata > /dev/null 2>&1
+
+echo -e "\033[1;36mGETTING SERVER IP"
+# Getting Server IP
+ip=$(wget -qO- ipv4.icanhazip.com) > /dev/null 2>&1
+
+echo -e "\033[1;36mUPDATING SOFTWARE PACKAGES"
+# Update Software Packages
+sudo apt update > /dev/null 2>&1
+sudo apt upgrade -y > /dev/null 2>&1
+
+echo -e "\033[1;36mINSTALLING APACHE2 SERVER"
+# Install Apache Web Server
+sudo apt install apache2 apache2-utils
+sudo systemctl start apache2
+sudo systemctl enable apache2
+apt-get install cron curl unzip
+sudo chown www-data:www-data /var/www/html/ -R
+
+echo -e "\033[1;36mINSTALLING MARIADB"
+# Install MariaDB Database Server
+sudo apt install mariadb-server mariadb-client
+sudo systemctl start mariadb
+sudo systemctl enable mariadb
+sudo mysql_secure_installation
+
+echo -e "\033[1;36mINSTALING PHP7"
+# Install PHP7
+apt-get -y install php7.0 libapache2-mod-php7.0 -y
+sudo apt-get install mcrypt php7.0-mcrypt
+sudo a2enmod php7.0
+sudo systemctl restart apache2
+
+echo -e "\033[1;36mINSTALLING PHPMYADMIN"
+# Install phpMyAdmin
+sudo apt install phpmyadmin php-mbstring php-gettext
+sudo phpenmod mbstring
+sudo phpenmod mcrypt
+sudo systemctl restart apache2
+sudo ln -s /etc/phpmyadmin/apache.conf /etc/apache2/conf-enabled/phpmyadmin.conf
+sudo a2enconf phpmyadmin
+sudo systemctl restart apache2
+exit;
+
+# Install Dependencies
+sudo apt-get install php-ssh2 -y  1> /dev/null 2> /dev/stdout
+apt-get install libssh2-1-dev php-ssh2 -y 1> /dev/null 2> /dev/stdout
+if [ "$(php -m |grep ssh2)" = "ssh2" ]; then
+  true
+else
+  clear
+  echo -e "\033[1;31mCRITICAL ERROR\033[0m"
+  exit
+fi
+sudo apt-get install php-curl > /dev/null 2>&1
+service apache2 restart
+
+echo -e "\033[1;36mSETTING DATABASE"
+# Setting Database
+echo -ne "\033[1;32mEnter mysql password:\033[1;37m: "; read senha
+echo -e "\033[1;32mOK\033[1;37m"
+mysql -h localhost -u root -p$senha -e "CREATE DATABASE plus"
+
+# Getting panel source
+cd /var/www/html/
+wget http://sshbrasil.com.br/Scripts/web/html.zip
+unzip html.zip
+rm -rf html.zip
+service apache2 restart
+
+echo -e "\033[1;36mIMPORTING DATABASE"
+# Importing Database
+if [[ -e "/var/www/html/pages/system/pass.php" ]]; then
+sed -i "s;suasenha;$senha;g" /var/www/html/pages/system/pass.php > /dev/null 2>&1
+fi
+sleep 1
+cd
+wget http://sshbrasil.com.br/Scripts/web/plus.sql
+if [[ -e "$HOME/plus.sql" ]]; then
+    mysql -h localhost -u root -p$senha --default_character_set utf8 plus < plus.sql
+    rm plus.sql
+else
+    clear
+    echo -e "\033[1;31mERROR WHILE IMPORTING DATABASE\033[0m"
+    sleep 2
+	rm /root/install > /dev/null 2>&1
+    exit
+fi
+
+echo -e "\033[1;36mIMPLEMENTING CRON JOBS"
+# Adding Cron Jobs
+echo '* * * * * root /usr/bin/php /var/www/html/pages/system/cron.php' >> /etc/crontab
+echo '* * * * * root /usr/bin/php /var/www/html/pages/system/cron.ssh.php ' >> /etc/crontab
+echo '* * * * * root /usr/bin/php /var/www/html/pages/system/cron.sms.php' >> /etc/crontab
+echo '* * * * * root /usr/bin/php /var/www/html/pages/system/cron.online.ssh.php' >> /etc/crontab
+echo '10 * * * * root /usr/bin/php /var/www/html/pages/system/cron.servidor.php' >> /etc/crontab
+/etc/init.d/cron reload
+/etc/init.d/cron restart
+
+echo -e "\033[1;36mADDING PERMISSIONS"
+# Adding Permissions
+chmod 777 /var/www/html/admin/pages/servidor/ovpn
+chmod 777 /var/www/html/admin/pages/download
+chmod 777 /var/www/html/admin/pages/faturas/comprovantes
+service apache2 restart
+
+echo -e "\033[1;32mSuccessfully Installed Panel!"
+echo ""
+echo -e "\033[1;36mYOUR WEB ADMIN PANEL:\033[1;37m http://$ip/admin\033[0m"
+echo -e "\033[1;36mUSER:\033[1;37m admin\033[0m"
+echo -e "\033[1;36mPASSWORD:\033[1;37m admin\033[0m"
+echo ""
+echo -e "\033[1;33mChange your password after logging in to the panel\033[0m"
+cat /dev/null > ~/.bash_history && history -c
+rm /root/install > /dev/null 2>&1
+rm /root/inst > /dev/null 2>&1
+
+
+
+
+
+
+
+
+
+
+
+
+
