@@ -276,13 +276,10 @@ else
 fi
 echo -ne '#############        (57%)\r'
 sleep 1
-sudo apt install ca-certificates apt-transport-https
-wget -q https://packages.sury.org/php/apt.gpg -O- | sudo apt-key add
-echo "deb https://packages.sury.org/php/ stretch main" | sudo tee /etc/apt/sources.list.d/php.list
-sudo apt install php5.6-fpm php5.6-mysql -y 1> /dev/null 2> /dev/stdout
+apt-get -y install php7.0-fpm php7.0-mysql -y 1> /dev/null 2> /dev/stdout
 if [[ $? > 0 ]]
 then
-    echo "Package php5 installation failed, exiting.#20"
+    echo "Package php7 installation failed, exiting.#20"
     exit
 else
     echo "Installing PHP, continuing with script."
@@ -363,7 +360,7 @@ then
 else
     echo "The command ran succesfuly, continuing with script." 1> /dev/null 2> /dev/stdout
 fi
-apt-get install php5-cli -y 1> /dev/null 2> /dev/stdout
+apt-get install php7.0-cli -y 1> /dev/null 2> /dev/stdout
 if [[ $? > 0 ]]
 then
     echo "The command failed, exiting.#php5-cli" 
@@ -381,7 +378,7 @@ php -m |grep ssh2 1> /dev/null 2> /dev/stdout
 #fi
 echo -ne '##################     (75%)\r'
 sleep 1
-apt-get install php5-curl -y 1> /dev/null 2> /dev/stdout
+apt-get install php7.0-curl -y 1> /dev/null 2> /dev/stdout
 if [[ $? > 0 ]]
 then
     echo "The command failed, exiting.#28" 
@@ -422,8 +419,8 @@ else
 fi
 echo -ne '####################   (80%)\r'
 sleep 1
-echo "Asia/Manila" > /etc/timezone 1> /dev/null 2> /dev/stdout
-dpkg-reconfigure -f noninteractive tzdata 1> /dev/null 2> /dev/stdout
+ln -fs /usr/share/zoneinfo/Asia/Manila /etc/localtime > /dev/null 2>&1
+dpkg-reconfigure --frontend noninteractive tzdata > /dev/null 2>&1
 if [[ $? > 0 ]]
 then
     echo "Failed to set time, exiting.#32"
